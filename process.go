@@ -13,12 +13,13 @@ type Info struct {
 	ID           int       `json:"ProcessId"`
 	WS           int64     `json:"WorkingSetSize"`
 	Args         string    `json:"CommandLine"`
+	Modules      []string  `json:"Modules"`
 	Start        time.Time `json:"-"`
 	CreationDate string    `json:"CreationDate"`
 }
 
 func GetInfoByName(name string) ([]*Info, error) {
-	cmd := fmt.Sprintf("$(Get-WmiObject Win32_Process -Filter \"name= '%s'\")  | Select-Object ProcessId,WorkingSetSize,CommandLine,CreationDate | ConvertTo-Json -Depth 1", name)
+	cmd := fmt.Sprintf("$(Get-WmiObject Win32_Process -Filter \"name= '%s'\")  | Select-Object ProcessId,WorkingSetSize,CommandLine,CreationDate,Modules | ConvertTo-Json -Depth 1", name)
 	out, err := exec.Command(
 		"powershell",
 		"-NoProfile",
@@ -35,6 +36,9 @@ func GetInfoByName(name string) ([]*Info, error) {
 	err = json.Unmarshal(out, &infoList)
 	for _, info := range infoList {
 		info.Start = formatTime(info.CreationDate)
+		for i, module := range info.Modules {
+			info.Modules[i] = extractModuleName(module)
+		}
 	}
 	return infoList, err
 }
@@ -43,6 +47,12 @@ func formatTime(t string) time.Time {
 	t, _, _ = strings.Cut(t, "+")
 	tt, _ := time.ParseInLocation("20060102150405.999999", t, time.Local)
 	return tt
+}
+
+var moduleNameReplacer = strings.NewReplacer(`System.Diagnostics.ProcessModule (`, "", ")", "")
+
+func extractModuleName(m string) string {
+	return moduleNameReplacer.Replace(m)
 }
 
 func Kill(name string, filter func(info Info) bool) error {
