@@ -41,7 +41,7 @@ func GetInfoByName(name string) ([]*Info, error) {
 
 func formatTime(t string) time.Time {
 	t, _, _ = strings.Cut(t, "+")
-	tt, _ := time.Parse("20060102150405.999999", t)
+	tt, _ := time.ParseInLocation("20060102150405.999999", t, time.Local)
 	return tt
 }
 
