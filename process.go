@@ -1,6 +1,7 @@
 package win_process
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,7 +34,13 @@ func GetInfoByName(name string) ([]*Info, error) {
 		return nil, nil
 	}
 	infoList := make([]*Info, 0)
-	err = json.Unmarshal(out, &infoList)
+	if bytes.HasPrefix(out, []byte("[")) {
+		err = json.Unmarshal(out, &infoList)
+	} else {
+		info := &Info{}
+		err = json.Unmarshal(out, &info)
+		infoList = append(infoList, info)
+	}
 	for _, info := range infoList {
 		info.Start = formatTime(info.CreationDate)
 		for i, module := range info.Modules {
