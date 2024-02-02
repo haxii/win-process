@@ -86,3 +86,11 @@ func Kill(name string, filter func(info Info) bool) error {
 	}
 	return nil
 }
+
+func ElevateMe() bool {
+	if AmAdmin() {
+		return true
+	}
+	RunMeElevated()
+	return AmAdmin()
+}
